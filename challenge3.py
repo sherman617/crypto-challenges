@@ -27,17 +27,19 @@ def byte_xor(src, h):
 
     return xor_bytes
 
+def crack_single_xor(d):
+    high_score = 0
+    hexlist = bytearray([x for x in range(256)])
+    for h in hexlist:
+        new_str = byte_xor(src_bytes, h)
+        new_score = english_score(new_str)
+        if new_score > high_score:
+            high_score = new_score
+            xor_byte = h
+    return xor_byte
 
 src_bytes = bytes.fromhex(src)
-high_score = 0
-hexlist = bytearray([x for x in range(256)])
-for h in hexlist:
-    new_str = byte_xor(src_bytes, h)
-    new_score = english_score(new_str)
-    if new_score > high_score:
-        high_score = new_score
-        xor_byte = h
-
+xor_byte = crack_single_xor(src_bytes)
 best = byte_xor(src_bytes, xor_byte)
 
 print('XOR byte = ', hex(xor_byte))
