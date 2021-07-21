@@ -41,10 +41,10 @@ def detect_ecb(ct):
     return match
 
 
-def add_pkcs7_pad(pt, pad, length):
+def add_pkcs7_pad(pt, length):
     """Add pad to pt to a block length of length."""
-    num_to_add = len(pt) % length
-    pad_str = pad * (length - num_to_add)
+    num_to_add = length - len(pt) % length
+    pad_str = bytes([num_to_add] * num_to_add)
     # pt_pad = pt + bytes(pad_str, '-utf-8')
     pt_pad = pt + (pad_str)
     return pt_pad
@@ -146,8 +146,9 @@ def encryption_oracle(data):
     print("PRE: ", pre_num_bytes)
     print("POST:", post_num_bytes)
 
-    data = add_pkcs7_pad(data, bytes([4]), 16)
-
+    data = add_pkcs7_pad(data, 16)
+    print("PAD: ", data)
+    
     if encryption_type == 1:
         ct = cbc_encode(data, key, iv)
     else:

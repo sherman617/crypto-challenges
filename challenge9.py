@@ -14,12 +14,13 @@
 # "YELLOW SUBMARINE\x04\x04\x04\x04"
 
 
-def add_pkcs7_pad(pt, pad, length):
+def add_pkcs7_pad(pt, length):
     """Add pad to pt to a block length of length."""
-    num_to_add = len(pt) % length
-    pad_str = pad * (length - num_to_add)
-    pt_pad = pt + pad_str.decode()
+    num_to_add = length - len(pt) % length
+    pad_str = bytes([num_to_add] * num_to_add)
+    # pt_pad = pt + bytes(pad_str, '-utf-8')
+    pt_pad = pt + (pad_str)
     return pt_pad
 
 
-print(add_pkcs7_pad("YELLOW SUBMARINE", b'\x04', 20).encode())
+print(add_pkcs7_pad(b"YELLOW SUBMARINE", 20))

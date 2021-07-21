@@ -25,6 +25,15 @@ from cryptography.hazmat.primitives.ciphers import (
 )
 
 
+def add_pkcs7_pad(pt, pad, length):
+    """Add pad to pt to a block length of length."""
+    num_to_add = length - len(pt) % length
+    pad_str = bytes([num_to_add] * num_to_add)
+    # pt_pad = pt + bytes(pad_str, '-utf-8')
+    pt_pad = pt + (pad_str)
+    return pt_pad
+
+
 def xor(src1, src2):
     """Perform byte xor of string src1 and src2 and return string value."""
     xor_bytes = []
@@ -37,6 +46,7 @@ def xor(src1, src2):
 
 
 def ecb_encode(pt, key):
+    block_size = 16
     encryptor = Cipher(
             algorithms.AES(key),
             modes.ECB(),
@@ -59,6 +69,7 @@ def ecb_decode(ct, key):
 def cbc_encode(pt, key, iv):
     """Return CBC mode ciphertext of plaintext, pt, using key and iv."""
     block_size = 16
+    pt = add_pkcs7_pad(pt, '\x04', 16)
     number_blocks = len(pt) // block_size
     cipher = ''
 
