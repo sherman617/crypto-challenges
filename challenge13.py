@@ -1,52 +1,84 @@
 # -*- coding: utf-8 -*-
 
-# Byte-at-a-time ECB decryption (Simple)
-
+# ECB cut-and-paste
 
 from libcrypto import (detect_ecb, add_pkcs7_pad,
-                       ecb_encode,
+                       ecb_encode, ecb_decode, remove_pkcs7_pad,
                        generate_random_key16)
-from base64 import b64decode
 
 
-ct_data = b64decode(
-    'Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg'
-    'aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq'
-    'dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg'
-    'YnkK')
+def kvdecode(string):
+    """Decode key-value string into dictionary of key-value pairs."""
+    kv_dict = {}
+    pairs = string.split('&')
+    for p in pairs:
+        kv = p.split('=')
+        kv_dict[kv[0]] = kv[1]
+
+    return kv_dict
 
 
-def encryption_oracle(data, key):
-    """Encrypt data using random key and encryption to use. Return data."""
-    data = add_pkcs7_pad(data, 16)
-    ct = ecb_encode(data, key)
-
-    return ct
-
-
-def find_block_size(data, key):
-    """Determine block size of encryption using oracle."""
-    ct = encryption_oracle(b"A" + ct_data, key)
-    for i in range(2, 20):
-        prev_ct = ct
-        ct = encryption_oracle((b"A" * i) + ct_data, key)
-        if (prev_ct[:4] == ct[:4]):
-            return i-1
+def kvencode(d):
+    """Encode dictionary email, uid, and role into a key-value string."""
+    string = 'email=' + removemeta(str(d['email'])) + \
+             '&uid=' + removemeta(str(d['uid'])) + \
+             '&role=' + removemeta(str(d['role']))
+    return string
 
 
-data = bytes([0]*64)
+def removemeta(string):
+    """Remove meta characters & and = from string and return new value."""
+    for char in '&=':
+        string = string.replace(char, '')
+    return string
+
+
+def profile_for(email):
+    #email = bytes(removemeta(str(email)), 'utf-8')
+    #print ('email2', email)
+    return b'email=' + email + b'&uid=10&role=user'
+
+def encode(string, key):
+    d = kvencode(string)
+    d = add_pkcs7_pad(bytes(d, 'utf-8'), 16)
+    f = ecb_encode(d, key)
+    return f
+
+test_str = 'foo=bar&baz=qux&zap=zazzle'
+c = kvdecode(test_str)
+print(c)
+
 key = generate_random_key16()
-block_size = find_block_size(data, key)
-assert block_size == 16
+key = b'\x9a\xac\xeb+u\xf1\x8d\xcf\xcelIS\x96\xe5\x80\xab'
+print('key', key)
 
-is_ecb = detect_ecb(encryption_oracle((b"A" * 50) + ct_data, key))
-assert is_ecb
+u1 = {'email': 'jake3456617@att.net', 'uid': 10, 'role': 'user&='}
+print(u1)
+f = encode(u1, key)
+print(f)
 
-pt = b''
-for i in range(len(ct_data)):
-    ct_byte = encryption_oracle((b"A" * 15) + ct_data[i:], key)
-    for j in range(256):
-        check_byte = encryption_oracle((b"A" * 15) + bytes([j]), key)
-        if check_byte[:16] == ct_byte[:16]:
-            pt = pt + bytes([j])
-print(pt.decode())
+u1 = {'email': 'jake345661723456789012@att.net', 'uid': 10, 'role': 'admin'}
+print(u1)
+f = encode(u1, key)
+print(f)
+
+u1 = 'admin'
+d = add_pkcs7_pad(bytes(u1, 'utf-8'), 16)
+j = ecb_encode(d, key)
+print('admin', f)
+
+f = profile_for(b'jake34561723456789012@att.net')
+print('email', f)
+print(len(f))
+f = add_pkcs7_pad(f, 16)
+print(f)
+f = ecb_encode(f, key)
+print(f)
+g = f[:48]
+print(g)
+g = g + j
+print(g)
+c = ecb_decode(g,key)
+print(c)
+c = remove_pkcs7_pad(c, 16)
+print(c)

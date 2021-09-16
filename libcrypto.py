@@ -32,6 +32,12 @@ def add_pkcs7_pad(pt, length):
     return pt_pad
 
 
+def remove_pkcs7_pad(pt, length):
+    """Remove pad bytes from pt with a block length of length."""
+    num_to_remove = pt[-1]
+    return pt[:- num_to_remove]
+
+
 def xor(src1, src2):
     """Perform byte xor of string src1 and src2 and return string value."""
     xor_bytes = []
